@@ -55,15 +55,22 @@ function CreateTrip() {
       .replace('{totalDays}', formData?.noOfDays)
       .replace('{traveler}', formData?.traveler)
       .replace('{budget}', formData?.budget)
-      .replace('{budget}', formData?.budget)
       .replace('{totalDays}', formData?.noOfDays)
 
-    console.log(FINAL_PROMPT)
+    console.log("FINAL_PROMPT:", FINAL_PROMPT)
 
+  try {
     const result = await chatSession.sendMessage(FINAL_PROMPT);
-    console.log(result?.response?.text());
+    const tripData = result?.response?.text();
+    console.log("AI Response Text:", tripData);
+    setLoading(false)
+  } catch (error) {
+    console.error("Error generating trip:", error);
+    toast('Error generating trip. Please try again.');
+  }finally {
     setLoading(false)
   }
+}
 
 {/*
   const SaveAiTrip = async (TripData) => {
