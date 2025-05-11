@@ -20,7 +20,7 @@ import { useNavigate } from 'react-router-dom';
 
 function CreateTrip() {
   const [place, setPlace] = useState();
-  const [formData, setFormData] = useState([]);
+  const [formData, setFormData] = useState({});
 
   const [openDialog, setOpenDialog] = useState(false);
 
@@ -54,19 +54,33 @@ function CreateTrip() {
       .replace('{totalDays}', formData?.noOfDays)
       .replace('{traveler}', formData?.traveler)
       .replace('{budget}', formData?.budget)
-      .replace('{totalDays}', formData?.noOfDays)
+      //.replace('{totalDays}', formData?.noOfDays)
 
     console.log("FINAL_PROMPT:", FINAL_PROMPT)
 
   try {
     const result = await chatSession.sendMessage(FINAL_PROMPT);
-    const tripData = result?.response?.text();
-    const jsonTripData = JSON.parse(tripData);
+    const tripDataString = result?.response?.text();
+
+    if (!tripDataString) {
+      toast('Failed to generate trip data from AI. The response was empty.');
+      return; // Exit if no data
+    }
+
+    const jsonTripData = JSON.parse(tripDataString);
     console.log("AI Response JSON:", jsonTripData);
-    //console.log("AI Response Text:", tripData);
-    setLoading(false)
+
+    // Navigate to the view-trip page and pass data in state
+    // Using a generic 'plan' for the tripId part of the URL now
+    navigate('/view-trip', { 
+      state: { 
+        tripData: jsonTripData, 
+        userSelection: formData 
+      } 
+    });
+
   } catch (error) {
-    console.error("Error generating trip:", error);
+    console.error("Error generating trip or parsing JSON:", error);
     toast('Error generating trip. Please try again.');
   }finally {
     setLoading(false)

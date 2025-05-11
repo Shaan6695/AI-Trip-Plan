@@ -13,7 +13,9 @@ function PlaceCardItem({place}) {
 
   const GetPlacePhoto = async () => {
       const data = {
+          //textQuery: trip?.tripData?.itinerary?.days?.plan?.place
           textQuery: place?.place
+
       }
       const result = await GetPlaceDetails(data).then(resp => {
           console.log(resp.data.places[0].photos[3].name)
