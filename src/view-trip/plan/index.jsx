@@ -20,6 +20,7 @@ function Viewtrip() {
                 userSelection: location.state.userSelection
             });
             console.log("Trip data received from location state:", location.state);
+            
         } else {
             console.log("No trip data found in location state.");
             toast("No trip data found. Please generate a trip first.");

@@ -12,16 +12,27 @@ function PlaceCardItem({place}) {
   }, [place])
 
   const GetPlacePhoto = async () => {
-      const data = {
-          //textQuery: trip?.tripData?.itinerary?.days?.plan?.place
-          textQuery: place?.place
-
+      if (!place?.place) {
+          console.log("Place name is missing, cannot fetch photo.");
+          return;
       }
-      const result = await GetPlaceDetails(data).then(resp => {
-          console.log(resp.data.places[0].photos[3].name)
-          const PhotoUrl = PHOTO_REF_URL.replace('{NAME}', resp.data.places[0].photos[3].name)
-          setPhotoUrl(PhotoUrl)
-      })
+      const data = {
+          textQuery: place?.place // Use place.place from props
+      }
+      try {
+          const resp = await GetPlaceDetails(data);
+          // Add checks for response structure
+          if (resp?.data?.places?.[0]?.photos?.[3]?.name) {
+              const PhotoUrl = PHOTO_REF_URL.replace('{NAME}', resp.data.places[0].photos[3].name);
+              setPhotoUrl(PhotoUrl);
+          } else {
+              console.log("Could not find photo for place:", place?.place);
+              setPhotoUrl('/placeholder.jpg'); // Fallback or leave as is
+          }
+      } catch (error) {
+          console.error("Error fetching place photo:", error);
+          setPhotoUrl('/placeholder.jpg'); // Fallback on error
+      }
   }
 
   return (
