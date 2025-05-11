@@ -61,7 +61,9 @@ function CreateTrip() {
   try {
     const result = await chatSession.sendMessage(FINAL_PROMPT);
     const tripData = result?.response?.text();
-    console.log("AI Response Text:", tripData);
+    const jsonTripData = JSON.parse(tripData);
+    console.log("AI Response JSON:", jsonTripData);
+    //console.log("AI Response Text:", tripData);
     setLoading(false)
   } catch (error) {
     console.error("Error generating trip:", error);
