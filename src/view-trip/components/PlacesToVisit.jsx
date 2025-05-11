@@ -6,7 +6,7 @@ function PlacesToVisit({trip}) {
     <div>
         <h2 className='font-bold text-xl'>Places to Visit</h2>
         <div>
-            {trip?.tripData?.itinerary?.dailyPlans?.map((item,index)=>(
+            {trip?.tripData?.itinerary?.dailyPlans?.map((item, index)=>(
                 <>
                 <div className='mt-5'>
                     <h2 className='font-bold text-lg'>{item.day}</h2>
@@ -15,7 +15,7 @@ function PlacesToVisit({trip}) {
                         <>
                         <div className='my-2'>
                             <h2 className='font-medium text-sm text-orange-600'>{place.time}</h2>
-                            <PlaceCardItem place={place}/>
+                            <PlaceCardItem place={place} key={index} tripLocation={trip?.userSelection?.location?.label}/>
                         </div>
                         </>
                     ))}

@@ -4,7 +4,7 @@ import { FaMapLocationDot } from "react-icons/fa6";
 import { Link } from 'react-router-dom';
 import { GetPlaceDetails, PHOTO_REF_URL } from '@/service/GlobalApi';
 
-function PlaceCardItem({place}) {
+function PlaceCardItem({place, tripLocation}) {
   const [photoUrl, setPhotoUrl] = useState();
 
   useEffect(() => {
@@ -36,7 +36,7 @@ function PlaceCardItem({place}) {
   }
 
   return (
-    <Link to={'https://www.google.com/maps/search/?api=1&query=' +place?.place} target='_blank'>
+    <Link to={'https://www.google.com/maps/search/?api=1&query=' + place?.place + (tripLocation ? ' ' + tripLocation : '')} target='_blank'>
     <div className='shadow-sm border rounded-xl p-3 mt-2 flex gap-5 hover:scale-105 hover:shadow-md cursor-pointer transition-all'>
         <img src={photoUrl?photoUrl:'/placeholder.jpg'} alt="" className='w-[130px] h-[130px] rounded-xl object-cover' />
         <div>
