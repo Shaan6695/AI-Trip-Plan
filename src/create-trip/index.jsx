@@ -1,8 +1,8 @@
 import { Input } from '@/components/ui/input';
 import { AI_PROMPT, SelectBudgetOptions, SelectTravelList } from '@/constants/options';
-import React, { useEffect, useState } from 'react'
-import GooglePlacesAutocomplete from 'react-google-places-autocomplete'
-import { Button } from '@/components/ui/button'
+import React, { useEffect, useState } from 'react';
+import GooglePlacesAutocomplete from 'react-google-places-autocomplete';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { chatSession } from '@/service/AIModel';
 import {
@@ -10,104 +10,85 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
-} from "@/components/ui/dialog"
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { FcGoogle } from "react-icons/fc";
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import { doc, setDoc } from "firebase/firestore";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 function CreateTrip() {
   const [place, setPlace] = useState();
   const [formData, setFormData] = useState({});
-
   const [openDialog, setOpenDialog] = useState(false);
-
-  const [loading, setLoading] = useState(false)
-
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleInputChange = (name, value) => {
-
     setFormData({
       ...formData,
       [name]: value
-    })
-  }
+    });
+  };
 
   useEffect(() => {
-    console.log(formData)
-  }, [formData])
+    console.log(formData);
+  }, [formData]);
 
   const onGenerateTrip = async () => {
-
     if (formData?.noOfDAys > 5 && !formData?.location || !formData?.budget || !formData.traveler) {
-      toast('Please fill all the details')
+      toast('Please fill all the details');
       return;
     }
 
-    setLoading(true)
+    setLoading(true);
 
     const FINAL_PROMPT = AI_PROMPT
       .replace('{location}', formData?.location?.label)
       .replace('{totalDays}', formData?.noOfDays)
       .replace('{traveler}', formData?.traveler)
-      .replace('{budget}', formData?.budget)
-      //.replace('{totalDays}', formData?.noOfDays)
+      .replace('{budget}', formData?.budget);
 
-    console.log("FINAL_PROMPT:", FINAL_PROMPT)
+    console.log("FINAL_PROMPT:", FINAL_PROMPT);
 
-  try {
-    const result = await chatSession.sendMessage(FINAL_PROMPT);
-    const tripDataString = result?.response?.text();
+    try {
+      const result = await chatSession.sendMessage(FINAL_PROMPT);
+      const tripDataString = result?.response?.text();
 
-    if (!tripDataString) {
-      toast('Failed to generate trip data from AI. The response was empty.');
-      return; // Exit if no data
+      if (!tripDataString) {
+        toast('Failed to generate trip data from AI. The response was empty.');
+        return;
+      }
+
+      const jsonTripData = JSON.parse(tripDataString);
+      console.log("AI Response JSON:", jsonTripData);
+
+      navigate('/view-trip', {
+        state: {
+          tripData: jsonTripData,
+          userSelection: formData
+        }
+      });
+
+    } catch (error) {
+      console.error("Error generating trip or parsing JSON:", error);
+      toast('Error generating trip. Please try again.');
+    } finally {
+      setLoading(false);
     }
-
-    const jsonTripData = JSON.parse(tripDataString);
-    console.log("AI Response JSON:", jsonTripData);
-
-    // Navigate to the view-trip page and pass data in state
-    // Using a generic 'plan' for the tripId part of the URL now
-    navigate('/view-trip', { 
-      state: { 
-        tripData: jsonTripData, 
-        userSelection: formData 
-      } 
-    });
-
-  } catch (error) {
-    console.error("Error generating trip or parsing JSON:", error);
-    toast('Error generating trip. Please try again.');
-  }finally {
-    setLoading(false)
-  }
-}
-
-{/*
-  const SaveAiTrip = async (TripData) => {
-    setLoading(true)
-    const user = JSON.parse(localStorage.getItem('user'))
-    const docId = Date.now().toString();
-    // Add a new document in collection "AITrips"
-    await setDoc(doc(db, "AITrips", docId), {
-      userSelection: formData,
-      tripData: JSON.parse(TripData),
-      userEmail: user?.email,
-      id: docId
-    });
-    setLoading(false)
-    navigate('/view-trip/' + docId)
-  }
-*/}
-
+  };
 
   return (
-    <div className='sm:px-10 md:px-32 lg:px-56 px-5 mt-10'>
-      <h2 className='font-bold text-3xl'>Tell us your travel preferences🏕️🌴</h2>
+    <div className='sm:px-10 md:px-32 lg:px-56 xl:px-72 px-5 mt-10'>
+      <div className="flex justify-between items-center">
+        <h2 className='font-bold text-3xl'>Tell us your travel preferences 🏕️🌴</h2>
+        <Link to="/my-trips">
+          <Button variant="outline">View My Trips</Button>
+        </Link>
+      </div>
       <p className='mt-3 text-gray-500 text-xl'>Just provide some basic information, and our trip planner will generate a customized itinerary based on your preferences.</p>
 
       <div className='mt-20 flex flex-col gap-10'>
@@ -117,7 +98,7 @@ function CreateTrip() {
             apiKey={import.meta.env.VITE_GOOGLE_PLACE_API_KEY}
             selectProps={{
               place,
-              onChange: (v) => { setPlace(v); handleInputChange('location', v) }
+              onChange: (v) => { setPlace(v); handleInputChange('location', v); }
             }}
           />
         </div>
@@ -126,7 +107,6 @@ function CreateTrip() {
           <h2 className='text-xl my-3 font-medium'>How many days are you planning your trip?</h2>
           <Input placeholder={'Ex.4'} type='number' onChange={(e) => handleInputChange('noOfDays', e.target.value)} />
         </div>
-
 
         <div>
           <h2 className='text-xl my-3 font-medium'>What is Your Budget?</h2>
@@ -164,27 +144,8 @@ function CreateTrip() {
           {loading ? <AiOutlineLoading3Quarters className='h-7 w-7 animate-spin' /> : 'Generate Trip'}
         </Button>
       </div>
-      
-      {/* }
-      <Dialog open={openDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogDescription>
-              <img src="/logo.svg" alt="logo" width="100px" className='items-center' />
-              <h2 className='font-bold text-lg'>Sign In to check out your travel plan</h2>
-              <p>Sign in to the App with Google authentication securely</p>
-              <Button
-                className="w-full mt-6 flex gap-4 items-center">
-                <FcGoogle className="h-7 w-7" />Sign in With Google
-              </Button>
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
-      */}
-
     </div>
-  )
+  );
 }
 
-export default CreateTrip
+export default CreateTrip;
