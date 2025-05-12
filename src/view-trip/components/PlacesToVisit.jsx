@@ -1,29 +1,26 @@
 import React from 'react'
 import PlaceCardItem from './PlaceCardItem'
 
-function PlacesToVisit({trip}) {
+function PlacesToVisit({ trip }) {
   return (
     <div>
-        <h2 className='font-bold text-xl'>Places to Visit</h2>
-        <div>
-            {trip?.tripData?.itinerary?.dailyPlans?.map((item, index)=>(
-                <>
-                <div className='mt-5'>
-                    <h2 className='font-bold text-lg'>{item.day}</h2>
-                    <div className='grid md:grid-cols-2 gap-5'>
-                    {item.plan.map((place, index)=> (
-                        <>
-                        <div className='my-2'>
-                            <h2 className='font-medium text-sm text-orange-600'>{place.time}</h2>
-                            <PlaceCardItem place={place} key={index} tripLocation={trip?.userSelection?.location?.label}/>
-                        </div>
-                        </>
-                    ))}
-                    </div>
-                    </div>
-                </>
+      <h2 className='font-bold text-xl'>Places to Visit</h2>
+      {trip?.tripData?.itinerary?.map((dayItem, dayIdx) => (
+        <div className='mt-5' key={dayItem.day || dayIdx}>
+          <h2 className='font-bold text-lg'>{dayItem.day}</h2>
+          <div className='grid md:grid-cols-2 gap-5'>
+            {dayItem.plan?.map((place, placeIdx) => (
+              <div className='my-2' key={placeIdx}>
+                <h2 className='font-medium text-sm text-orange-600'>{place.time}</h2>
+                <PlaceCardItem
+                  place={place}
+                  tripLocation={trip.userSelection?.location?.label}
+                />
+              </div>
             ))}
+          </div>
         </div>
+      ))}
     </div>
   )
 }
