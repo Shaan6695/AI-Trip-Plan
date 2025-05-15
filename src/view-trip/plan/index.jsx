@@ -8,6 +8,7 @@ import PlacesToVisit from '../components/PlacesToVisit';
 import Footer from '../components/Footer';
 import { Button } from '@/components/ui/button';
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function Viewtrip() {
     const { tripId } = useParams(); // Get tripId from URL
@@ -71,8 +72,6 @@ function Viewtrip() {
 
         setIsSaving(true);
 
-        
-        
         try {
             const savedTripsRaw = localStorage.getItem('savedTrips');
             let savedTrips = savedTripsRaw ? JSON.parse(savedTripsRaw) : [];
@@ -129,8 +128,20 @@ function Viewtrip() {
     return (
         <div className='p-10 md:px-20 lg:px-44 xl:px-56'>
             <InfoSection trip={trip} />
-            <Hotels trip={trip} />
-            <PlacesToVisit trip={trip} />
+            
+            <Tabs defaultValue="hotels" className="mt-8">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="hotels">Hotel Options</TabsTrigger>
+                    <TabsTrigger value="places">Places to Visit</TabsTrigger>
+                </TabsList>
+                <TabsContent value="hotels">
+                    <Hotels trip={trip} />
+                </TabsContent>
+                <TabsContent value="places">
+                    <PlacesToVisit trip={trip} />
+                </TabsContent>
+            </Tabs>
+            
             <div className="my-10 flex justify-center">
                 <Button onClick={handleSaveTrip} disabled={isSaving}>
                     {isSaving ? (
