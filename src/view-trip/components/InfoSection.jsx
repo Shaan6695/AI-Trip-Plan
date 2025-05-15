@@ -1,30 +1,44 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { Button } from '@/components/ui/button'
-import { getPlacePhotoUrl } from '@/service/GlobalApi'
+import { FaMapMarkerAlt, FaCalendarAlt, FaMoneyBillWave, FaUsers } from 'react-icons/fa'
+import { Link } from 'react-router-dom'
 
 function InfoSection({ trip }) {
-    const [photoUrl, setPhotoUrl] = useState();
-
-    useEffect(() => {
-        async function fetchPhoto() {
-            if (trip?.userSelection?.location?.label) {
-                const url = await getPlacePhotoUrl(trip.userSelection.location.label);
-                setPhotoUrl(url);
-            }
-        }
-        fetchPhoto();
-    }, [trip]);
-    
     return (
-        <div>
-            <img src={photoUrl?photoUrl:'/placeholder.jpg'} alt="img" className='h-[340px] w-full object-cover rounded-xl' />
-            <div>
-                <div className='my-5 flex flex-col gap-2'>
-                    <h2 className='font-bold text-2xl'>{trip?.userSelection?.location?.label}</h2>
-                    <div className='flex gap-5'>
-                        <h2 className='p-1 px-3 bg-gray-200 rounded-full text-gray-500 text-xs md:text-md '>📅{trip.userSelection?.noOfDays} Day</h2>
-                        <h2 className='p-1 px-3 bg-gray-200 rounded-full text-gray-500 text-xs md:text-md'>💰{trip.userSelection?.budget} Budget</h2>
-                        <h2 className='p-1 px-3 bg-gray-200 rounded-full text-gray-500 text-xs md:text-md'>👥No. of traveler/s: {trip.userSelection?.traveler}</h2>
+        <div className="space-y-4">
+            {/* Destination card */}
+            <div className="rounded-xl p-6 border shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50">
+                <div className='flex flex-col gap-4'>
+                    <div className="flex items-center gap-3">
+                        <FaMapMarkerAlt className="text-3xl text-blue-600" />
+                        <h2 className='font-bold text-3xl'>{trip?.userSelection?.location?.label}</h2>
+                    </div>
+                    
+                    <Link 
+                        to={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(trip?.userSelection?.location?.label)}`} 
+                        target="_blank"
+                        className="w-full sm:w-auto"
+                    >
+                        <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                            View Destination on Google Maps
+                        </Button>
+                    </Link>
+                    
+                    <div className='flex flex-wrap gap-3 mt-2'>
+                        <div className='flex items-center gap-2 p-2 px-4 bg-gray-100 rounded-full text-gray-700'>
+                            <FaCalendarAlt />
+                            <span>{trip.userSelection?.noOfDays} Day{trip.userSelection?.noOfDays > 1 ? 's' : ''}</span>
+                        </div>
+                        
+                        <div className='flex items-center gap-2 p-2 px-4 bg-gray-100 rounded-full text-gray-700'>
+                            <FaMoneyBillWave />
+                            <span>{trip.userSelection?.budget} Budget</span>
+                        </div>
+                        
+                        <div className='flex items-center gap-2 p-2 px-4 bg-gray-100 rounded-full text-gray-700'>
+                            <FaUsers />
+                            <span>{trip.userSelection?.traveler}</span>
+                        </div>
                     </div>
                 </div>
             </div>
