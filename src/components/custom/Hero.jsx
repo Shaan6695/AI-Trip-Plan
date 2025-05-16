@@ -9,7 +9,7 @@ function Hero() {
 
       <p className='text-xl text-gray-500 text-center'>Your personal trip planner and travel curator, creating custom itineraries tailored to your interests and budget.</p>
 
-      <Link to={'/create-trip'}><Button>Get Started, It's free</Button></Link>
+      <Link to={'/create-trip'}><Button>Get Started</Button></Link>
 
       <img src="/landing.png" alt="" className='w-[750px]' />
 
