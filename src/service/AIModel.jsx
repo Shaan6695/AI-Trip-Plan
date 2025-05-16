@@ -32,3 +32,35 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
         },
       ],
     });
+
+// Function to generate trip summary based on the trip data
+export const generateTripSummary = async (tripData) => {
+  try {
+    // Create a new model instance for one-time call
+    const summaryModel = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+    });
+
+    // Construct prompt for summary generation
+    const prompt = `
+    Please provide a concise summary (2-3 sentences) of the following trip plan:
+    Destination: ${tripData.userSelection?.location?.label}
+    Duration: ${tripData.userSelection?.noOfDays} days
+    Traveler Type: ${tripData.userSelection?.traveler}
+    Budget: ${tripData.userSelection?.budget}
+    
+    Here's the itinerary data in JSON format:
+    ${JSON.stringify(tripData.tripData)}
+    
+    Include key highlights and attractions in the summary. Keep it brief but informative.
+    `;
+
+    const result = await summaryModel.generateContent(prompt);
+    const response = await result.response;
+    const summary = response.text();
+    return summary;
+  } catch (error) {
+    console.error("Error generating trip summary:", error);
+    return "Unable to generate trip summary at this time.";
+  }
+};

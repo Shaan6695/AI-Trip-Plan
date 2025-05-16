@@ -1,8 +1,8 @@
 import { Input } from '@/components/ui/input';
 import { AI_PROMPT, SelectBudgetOptions, SelectTravelList } from '@/constants/options';
-import React, { useEffect, useState } from 'react'
-import GooglePlacesAutocomplete from 'react-google-places-autocomplete'
-import { Button } from '@/components/ui/button'
+import React, { useEffect, useState } from 'react';
+import GooglePlacesAutocomplete from 'react-google-places-autocomplete';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { chatSession } from '@/service/AIModel';
 import {
@@ -10,89 +10,170 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
-} from "@/components/ui/dialog"
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { FcGoogle } from "react-icons/fc";
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import { doc, setDoc } from "firebase/firestore";
-import { app, db } from '@/service/firebaseConfig';
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 function CreateTrip() {
   const [place, setPlace] = useState();
-  const [formData, setFormData] = useState([]);
-
+  const [formData, setFormData] = useState({});
   const [openDialog, setOpenDialog] = useState(false);
-
-  const [loading, setLoading] = useState(false)
-
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleInputChange = (name, value) => {
-
     setFormData({
       ...formData,
       [name]: value
-    })
-  }
+    });
+  };
 
   useEffect(() => {
-    console.log(formData)
-  }, [formData])
+    console.log(formData);
+  }, [formData]);
 
   const onGenerateTrip = async () => {
-
     if (formData?.noOfDAys > 5 && !formData?.location || !formData?.budget || !formData.traveler) {
-      toast('Please fill all the details')
+      toast('Please fill all the details');
       return;
     }
 
-    setLoading(true)
+    setLoading(true);
 
     const FINAL_PROMPT = AI_PROMPT
       .replace('{location}', formData?.location?.label)
       .replace('{totalDays}', formData?.noOfDays)
       .replace('{traveler}', formData?.traveler)
-      .replace('{budget}', formData?.budget)
-      .replace('{totalDays}', formData?.noOfDays)
+      .replace('{budget}', formData?.budget);
 
-    console.log("FINAL_PROMPT:", FINAL_PROMPT)
+    console.log("FINAL_PROMPT:", FINAL_PROMPT);
 
-  try {
-    const result = await chatSession.sendMessage(FINAL_PROMPT);
-    const tripData = result?.response?.text();
-    console.log("AI Response Text:", tripData);
-    setLoading(false)
-  } catch (error) {
-    console.error("Error generating trip:", error);
-    toast('Error generating trip. Please try again.');
-  }finally {
-    setLoading(false)
-  }
-}
+    try {
+      const result = await chatSession.sendMessage(FINAL_PROMPT);
+      const tripDataString = result?.response?.text();
 
-{/*
-  const SaveAiTrip = async (TripData) => {
-    setLoading(true)
-    const user = JSON.parse(localStorage.getItem('user'))
-    const docId = Date.now().toString();
-    // Add a new document in collection "AITrips"
-    await setDoc(doc(db, "AITrips", docId), {
-      userSelection: formData,
-      tripData: JSON.parse(TripData),
-      userEmail: user?.email,
-      id: docId
-    });
-    setLoading(false)
-    navigate('/view-trip/' + docId)
-  }
-*/}
+      if (!tripDataString) {
+        toast('Failed to generate trip data from AI. The response was empty.');
+        setLoading(false);
+        return;
+      }
 
+      let jsonTripData;
+      try {
+        jsonTripData = JSON.parse(tripDataString);
+      } catch (parseError) {
+        console.error("Error parsing AI response JSON:", parseError);
+        console.error("AI Response String was:", tripDataString);
+        toast('Error parsing trip data from AI. The format was unexpected.');
+        setLoading(false);
+        return;
+      }
+      
+      console.log("Original AI Response JSON:", jsonTripData);
+
+      const normalizeData = (data) => {
+        const normalized = { ...data };
+
+        if (normalized.hotel_options && Array.isArray(normalized.hotel_options)) {
+          normalized.hotel_options = normalized.hotel_options.map(hotel => ({
+            name: hotel.name || hotel["Hotel Name"],
+            address: hotel.address || hotel["Hotel address"],
+            price: hotel.price_details || hotel.Price || hotel.price,
+            description: hotel.description,
+            rating: hotel.rating,
+            geo_coordinates: hotel.geo_coordinates || hotel["Geo Coordinates"]
+          }));
+        } else {
+          normalized.hotel_options = [];
+        }
+
+        if (data.itinerary) {
+          let sourcePlansArray = null;
+
+          if (Array.isArray(data.itinerary)) {
+            sourcePlansArray = data.itinerary;
+            normalized.itinerary = {};
+          } else if (typeof data.itinerary === 'object' && data.itinerary !== null) {
+            const rawDailyPlans = data.itinerary.daily_plans;
+            const rawDaysKeyData = data.itinerary.days;
+
+            if (rawDailyPlans && Array.isArray(rawDailyPlans)) {
+              sourcePlansArray = rawDailyPlans;
+            } else if (rawDaysKeyData && Array.isArray(rawDaysKeyData)) {
+              sourcePlansArray = rawDaysKeyData;
+              if (normalized.itinerary && normalized.itinerary.days) {
+                  delete normalized.itinerary.days; 
+              }
+            }
+          }
+
+          if (sourcePlansArray && Array.isArray(sourcePlansArray)) {
+            normalized.itinerary.daily_plans = sourcePlansArray.map(day => ({
+              ...day, 
+              plan: (day.plan && Array.isArray(day.plan)) ? day.plan.map(p => {
+                const placeNameSource = p.place || p.name || p.title || p.activity;
+                if (!placeNameSource) {
+                  console.warn("Place name/title not found in AI response item for a plan. Original plan object:", JSON.stringify(p));
+                }
+                return {
+                  name: placeNameSource || "Unnamed Activity",
+                  details: p.details || p["Place Details"],
+                  time: p.time,
+                  ticket_pricing: p.ticket_pricing || p["ticket Pricing"] || p["Ticket Pricing"],
+                  rating: p.rating,
+                  geo_coordinates: p.geo_coordinates || p["Geo Coordinates"]
+                };
+              }) : [] 
+            }));
+          } else {
+            console.warn("No valid array of daily plans found in 'itinerary'. Setting 'daily_plans' to an empty array. Original itinerary data:", JSON.stringify(data.itinerary));
+            if (typeof normalized.itinerary !== 'object' || normalized.itinerary === null) {
+                normalized.itinerary = {};
+            }
+            normalized.itinerary.daily_plans = [];
+            if (normalized.itinerary.hasOwnProperty('days')) {
+                 delete normalized.itinerary.days;
+            }
+          }
+        } else {
+          console.warn("AI Response JSON does not contain an 'itinerary' key or it is null. Initializing with empty daily_plans.");
+          normalized.itinerary = { daily_plans: [] };
+        }
+        return normalized;
+      };
+
+      const normalizedTripData = normalizeData(jsonTripData);
+      console.log("Normalized AI Response JSON:", normalizedTripData);
+
+      navigate('/view-trip', {
+        state: {
+          tripData: normalizedTripData,
+          userSelection: formData
+        }
+      });
+
+    } catch (error) {
+      console.error("Error generating trip or parsing JSON:", error);
+      toast('Error generating trip. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className='sm:px-10 md:px-32 lg:px-56 px-5 mt-10'>
-      <h2 className='font-bold text-3xl'>Tell us your travel preferences🏕️🌴</h2>
+    <div className='sm:px-10 md:px-32 lg:px-56 xl:px-72 px-5 mt-10'>
+      <div className="flex justify-between items-center">
+        <h2 className='font-bold text-3xl'>Tell us your travel preferences 🏕️🌴</h2>
+        <Link to="/my-trips">
+          <Button variant="outline">View My Trips</Button>
+        </Link>
+      </div>
       <p className='mt-3 text-gray-500 text-xl'>Just provide some basic information, and our trip planner will generate a customized itinerary based on your preferences.</p>
 
       <div className='mt-20 flex flex-col gap-10'>
@@ -102,7 +183,7 @@ function CreateTrip() {
             apiKey={import.meta.env.VITE_GOOGLE_PLACE_API_KEY}
             selectProps={{
               place,
-              onChange: (v) => { setPlace(v); handleInputChange('location', v) }
+              onChange: (v) => { setPlace(v); handleInputChange('location', v); }
             }}
           />
         </div>
@@ -111,7 +192,6 @@ function CreateTrip() {
           <h2 className='text-xl my-3 font-medium'>How many days are you planning your trip?</h2>
           <Input placeholder={'Ex.4'} type='number' onChange={(e) => handleInputChange('noOfDays', e.target.value)} />
         </div>
-
 
         <div>
           <h2 className='text-xl my-3 font-medium'>What is Your Budget?</h2>
@@ -149,27 +229,8 @@ function CreateTrip() {
           {loading ? <AiOutlineLoading3Quarters className='h-7 w-7 animate-spin' /> : 'Generate Trip'}
         </Button>
       </div>
-      
-      {/* }
-      <Dialog open={openDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogDescription>
-              <img src="/logo.svg" alt="logo" width="100px" className='items-center' />
-              <h2 className='font-bold text-lg'>Sign In to check out your travel plan</h2>
-              <p>Sign in to the App with Google authentication securely</p>
-              <Button
-                className="w-full mt-6 flex gap-4 items-center">
-                <FcGoogle className="h-7 w-7" />Sign in With Google
-              </Button>
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
-      */}
-
     </div>
-  )
+  );
 }
 
-export default CreateTrip
+export default CreateTrip;
