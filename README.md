@@ -12,6 +12,7 @@ AI Trip Planner
 
 <img width="1470" alt="Screenshot 2025-05-16 at 6 12 55 PM" src="https://github.com/user-attachments/assets/03515128-ac14-43c3-ba44-4f440c874d0d" />
 
-<img width="1459" alt="Screenshot 2025-05-16 at 6 13 40 PM" src="https://github.com/user-attachments/assets/6b150b67-8693-4ef3-92fc-1755bbc583fd" />
+<img width="1464" alt="Screenshot 2025-05-16 at 6 51 59 PM" src="https://github.com/user-attachments/assets/a8250dc2-7b87-441a-98a5-f3912d4a11a2" />
+
 
 
