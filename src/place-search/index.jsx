@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Loader } from '@googlemaps/js-api-loader';
-import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaChevronDown, FaChevronUp, FaMagic, FaSpinner } from 'react-icons/fa';
+import { summarizeReviews } from '../service/AIModel';
+import { toast } from 'sonner';
 
 function PlaceSearch() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -14,6 +16,8 @@ function PlaceSearch() {
   const [placesService, setPlacesService] = useState(null);
   const [expandedReviews, setExpandedReviews] = useState(false);
   const [expandedReviewIndex, setExpandedReviewIndex] = useState(null);
+  const [reviewSummary, setReviewSummary] = useState('');
+  const [summaryLoading, setSummaryLoading] = useState(false);
   
   // Load Google Maps API
   useEffect(() => {
@@ -45,6 +49,7 @@ function PlaceSearch() {
     setLoading(true);
     setError('');
     setSelectedPlace(null);
+    setReviewSummary('');
 
     const request = {
       query: searchQuery,
@@ -69,6 +74,7 @@ function PlaceSearch() {
     setError('');
     setExpandedReviews(false);
     setExpandedReviewIndex(null);
+    setReviewSummary('');
 
     placesService.getDetails({
       placeId: placeId,
@@ -86,6 +92,30 @@ function PlaceSearch() {
         setError('Failed to get place details.');
       }
     });
+  };
+
+  // Generate an AI summary of the reviews
+  const handleSummarizeReviews = async () => {
+    if (!selectedPlace || !selectedPlace.reviews || selectedPlace.reviews.length === 0) {
+      toast.error("No reviews available to summarize");
+      return;
+    }
+
+    setSummaryLoading(true);
+    setReviewSummary('');
+
+    try {
+      const summary = await summarizeReviews(
+        selectedPlace.name, 
+        selectedPlace.reviews
+      );
+      setReviewSummary(summary);
+    } catch (error) {
+      console.error("Error summarizing reviews:", error);
+      toast.error("Failed to summarize reviews. Please try again.");
+    } finally {
+      setSummaryLoading(false);
+    }
   };
 
   // Format the timestamp from Google reviews
@@ -188,14 +218,35 @@ function PlaceSearch() {
         {/* Reviews Section */}
         {selectedPlace.reviews && selectedPlace.reviews.length > 0 && (
           <div className="mt-6 border-t pt-4">
-            <div className="flex justify-between items-center cursor-pointer" onClick={toggleReviews}>
-              <h3 className="font-semibold text-lg">
-                Reviews ({selectedPlace.reviews.length})
-              </h3>
-              <Button variant="ghost" size="sm" className="p-1 h-auto">
-                {expandedReviews ? <FaChevronUp /> : <FaChevronDown />}
+            <div className="flex justify-between items-center">
+              <div className="flex items-center cursor-pointer" onClick={toggleReviews}>
+                <h3 className="font-semibold text-lg">
+                  Reviews ({selectedPlace.reviews.length})
+                </h3>
+                <Button variant="ghost" size="sm" className="p-1 h-auto">
+                  {expandedReviews ? <FaChevronUp /> : <FaChevronDown />}
+                </Button>
+              </div>
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="text-sm flex items-center gap-1"
+                onClick={handleSummarizeReviews}
+                disabled={summaryLoading || selectedPlace.reviews.length === 0}
+              >
+                {summaryLoading ? <FaSpinner className="animate-spin" /> : <FaMagic />}
+                <span>Summarize</span>
               </Button>
             </div>
+            
+            {/* AI Summary */}
+            {reviewSummary && (
+              <div className="mt-3 p-3 bg-blue-50 rounded-md text-sm border border-blue-100">
+                <h4 className="font-semibold text-blue-800 mb-1">AI Summary</h4>
+                <p className="text-gray-700">{reviewSummary}</p>
+              </div>
+            )}
 
             {expandedReviews && (
               <div className="space-y-4 mt-3">

@@ -64,3 +64,45 @@ export const generateTripSummary = async (tripData) => {
     return "Unable to generate trip summary at this time.";
   }
 };
+
+// Function to summarize reviews using AI
+export const summarizeReviews = async (placeName, reviews) => {
+  try {
+    // Create a new model instance for one-time call
+    const reviewModel = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+    });
+
+    // Extract the relevant review data
+    const reviewData = reviews.map(review => ({
+      author: review.author_name,
+      rating: review.rating,
+      text: review.text,
+      time: review.relative_time_description
+    }));
+
+    // Construct prompt for review summarization
+    const prompt = `
+    I need a concise summary (3-4 sentences) of these ${reviewData.length} reviews for ${placeName}. 
+    
+    Here are the reviews:
+    ${JSON.stringify(reviewData)}
+    
+    In your summary:
+    1. Identify the overall sentiment (positive, mixed, negative)
+    2. Mention the average rating and what customers generally like/dislike
+    3. Note any recurring themes or standout points mentioned by multiple reviewers
+    4. Include any warning flags or specific recommendations based on the reviews
+    
+    Keep it friendly, balanced, and helpful for someone deciding whether to visit.
+    `;
+
+    const result = await reviewModel.generateContent(prompt);
+    const response = await result.response;
+    const summary = response.text();
+    return summary;
+  } catch (error) {
+    console.error("Error generating review summary:", error);
+    return "Unable to summarize reviews at this time.";
+  }
+};
