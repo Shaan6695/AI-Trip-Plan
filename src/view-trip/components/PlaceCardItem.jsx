@@ -1,8 +1,12 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom';
-import { FaMapMarkerAlt, FaTicketAlt, FaStar, FaInfoCircle, FaClock } from 'react-icons/fa'
+import { FaMapMarkerAlt, FaTicketAlt, FaStar, FaInfoCircle, FaClock, FaCopy, FaCheck } from 'react-icons/fa'
+import { Button } from '../../components/ui/button';
+import { toast } from 'sonner';
 
 function PlaceCardItem({place, tripLocation}) {
+    const [copied, setCopied] = useState(false);
+    
     // Get an icon based on the place name/type
     const getPlaceIcon = (placeName) => {
         if (!placeName || typeof placeName !== 'string') return '📍'; // Handle undefined or non-string placeName
@@ -17,18 +21,51 @@ function PlaceCardItem({place, tripLocation}) {
         if (nameLower.includes('market') || nameLower.includes('shop')) return '🛍️';
         return '📍'; // Default
     };
+    
+    const handleCopy = (e) => {
+        e.preventDefault(); // Prevent the link from opening
+        e.stopPropagation(); // Stop the event from bubbling up
+        
+        if (place?.name) {
+            navigator.clipboard.writeText(place.name)
+                .then(() => {
+                    setCopied(true);
+                    toast.success("Place name copied to clipboard");
+                    setTimeout(() => setCopied(false), 2000);
+                })
+                .catch(err => {
+                    console.error('Failed to copy: ', err);
+                    toast.error("Failed to copy");
+                });
+        }
+    };
 
     return (
-        <Link to={'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(place?.name + (tripLocation ? ' ' + tripLocation : ''))} target='_blank'>
-            <div className='hover:shadow-md hover:scale-102 transition-all border rounded-xl p-5 my-3 bg-gradient-to-r from-gray-50 to-white'>
+        <div className='relative hover:shadow-md hover:scale-102 transition-all border rounded-xl p-5 my-3 bg-gradient-to-r from-gray-50 to-white'>
+            <div className="flex justify-between mb-2">
+                <Link to={'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(place?.name + (tripLocation ? ' ' + tripLocation : ''))} target='_blank' className="block w-11/12">
+                    <h2 className='font-bold text-lg'>{place?.name}</h2>
+                </Link>
+                
+                {/* Copy button - now in the flex layout */}
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="rounded-full w-8 h-8 p-0 shrink-0 ml-2"
+                    onClick={handleCopy}
+                    title="Copy place name"
+                >
+                    {copied ? <FaCheck className="h-3 w-3 text-green-500" /> : <FaCopy className="h-3 w-3" />}
+                </Button>
+            </div>
+            
+            <Link to={'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(place?.name + (tripLocation ? ' ' + tripLocation : ''))} target='_blank' className="block">
                 <div className="flex items-start gap-4">
                     <div className="text-4xl self-center">
                         {getPlaceIcon(place?.name)}
                     </div>
                     
                     <div className="space-y-2 flex-1">
-                        <h2 className='font-bold text-lg'>{place?.name}</h2>
-                        
                         {/* Time indicator */}
                         {place?.time && (
                             <div className='flex items-center gap-2 text-sm text-gray-600'>
@@ -61,8 +98,8 @@ function PlaceCardItem({place, tripLocation}) {
                         </div>
                     </div>
                 </div>
-            </div>
-        </Link>
+            </Link>
+        </div>
     )
 }
 
