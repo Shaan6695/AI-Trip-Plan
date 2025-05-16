@@ -36,6 +36,14 @@ function Header() {
               My Trips
             </Button>
           </Link>
+          <Link to="/place-search">
+            <Button 
+              variant={location.pathname === "/place-search" ? "default" : "ghost"}
+              className="text-sm font-medium transition-colors"
+            >
+              Place Search
+            </Button>
+          </Link>
         </nav>
       </div>
     </header>

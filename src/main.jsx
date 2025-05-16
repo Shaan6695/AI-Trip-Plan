@@ -8,6 +8,7 @@ import { Toaster } from './components/ui/sonner.jsx'
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import Viewtrip from './view-trip/plan/index.jsx'
 import MyTrips from './my-trips/index.jsx'
+import PlaceSearch from './place-search/index.jsx'
 import Layout from './components/custom/Layout.jsx'
 
 const router = createBrowserRouter([
@@ -30,6 +31,10 @@ const router = createBrowserRouter([
   {
     path: '/my-trips',
     element: <Layout><MyTrips /></Layout>
+  },
+  {
+    path: '/place-search',
+    element: <Layout><PlaceSearch /></Layout>
   }
 ])
 
