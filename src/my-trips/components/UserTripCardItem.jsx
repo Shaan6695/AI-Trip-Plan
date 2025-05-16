@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom';
-import { FaMapMarkerAlt, FaCalendarAlt, FaMoneyBillWave } from 'react-icons/fa'
+import { FaMapMarkerAlt, FaCalendarAlt, FaMoneyBillWave, FaInfoCircle } from 'react-icons/fa'
 
 function UserTripCardItem({ trip }) {
   // Get color theme based on destination
@@ -44,6 +44,12 @@ function UserTripCardItem({ trip }) {
   const destination = trip?.userSelection?.location?.label || '';
   const colorTheme = getDestinationTheme(destination);
   const emoji = getDestinationEmoji(destination);
+  
+  // Get summary preview if available
+  const hasSummary = trip?.summary && trip.summary.length > 0;
+  const summaryPreview = hasSummary 
+    ? (trip.summary.length > 70 ? trip.summary.substring(0, 70) + '...' : trip.summary)
+    : '';
 
   return (
     <Link to={`/view-trip/${trip?.id}`}>
@@ -53,7 +59,17 @@ function UserTripCardItem({ trip }) {
           <span className="text-4xl">{emoji}</span>
         </div>
 
-        <div className="mt-8 space-y-3">
+        {hasSummary && (
+          <div className="mt-3 text-sm text-gray-600 italic">
+            <div className="flex items-center gap-1 mb-1">
+              <FaInfoCircle className="text-blue-500" size={14} />
+              <span className="font-medium">Trip Summary:</span>
+            </div>
+            <p>{summaryPreview}</p>
+          </div>
+        )}
+
+        <div className="mt-4 space-y-3">
           <div className='flex items-center gap-2 text-sm'>
             <FaCalendarAlt className="text-blue-600" />
             <span>{trip?.userSelection?.noOfDays} day trip</span>

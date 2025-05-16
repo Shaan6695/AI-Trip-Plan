@@ -2,6 +2,7 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { FaMapMarkerAlt, FaCalendarAlt, FaMoneyBillWave, FaUsers } from 'react-icons/fa'
 import { Link } from 'react-router-dom'
+import TripSummary from './TripSummary'
 
 function InfoSection({ trip }) {
     return (
@@ -42,6 +43,9 @@ function InfoSection({ trip }) {
                     </div>
                 </div>
             </div>
+
+            {/* Trip Summary */}
+            <TripSummary trip={trip} />
         </div>
     )
 }

@@ -86,6 +86,8 @@ function Viewtrip() {
                 ...trip,
                 id: trip.id || Date.now().toString(), // Use existing ID or generate new
                 createdAt: new Date().toISOString() 
+                // The summary is already attached to the trip object in TripSummary component
+                // It will be saved as part of the trip
             };
 
             // Avoid duplicates if saving an already saved trip by ID
