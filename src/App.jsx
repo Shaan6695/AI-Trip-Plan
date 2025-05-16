@@ -1,15 +1,12 @@
-import { useState } from 'react'
+import React from 'react'
 import './App.css'
 import Hero from './components/custom/Hero'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      {/* Hero */}
+    <div className="container mx-auto px-4 py-8">
       <Hero/>
-    </>
+    </div>
   )
 }
 

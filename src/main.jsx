@@ -8,28 +8,29 @@ import { Toaster } from './components/ui/sonner.jsx'
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import Viewtrip from './view-trip/plan/index.jsx'
 import MyTrips from './my-trips/index.jsx'
+import Layout from './components/custom/Layout.jsx'
 
-const router = createBrowserRouter([{
-  path: '/',
-  element: <App />
-},
-{
-  path:'/create-trip',
-  element: <CreateTrip />
-},
-{
-  path: '/view-trip/:tripId', // Add :tripId parameter
-  element: <Viewtrip />
-},
-{
-  path: '/view-trip', // Keep this for newly generated trips not yet saved
-  element: <Viewtrip />
-},
-{
-  path: '/my-trips',
-  element: <MyTrips />
-}
-
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Layout><App /></Layout>
+  },
+  {
+    path:'/create-trip',
+    element: <Layout><CreateTrip /></Layout>
+  },
+  {
+    path: '/view-trip/:tripId',
+    element: <Layout><Viewtrip /></Layout>
+  },
+  {
+    path: '/view-trip',
+    element: <Layout><Viewtrip /></Layout>
+  },
+  {
+    path: '/my-trips',
+    element: <Layout><MyTrips /></Layout>
+  }
 ])
 
 ReactDOM.createRoot(document.getElementById('root')).render(
