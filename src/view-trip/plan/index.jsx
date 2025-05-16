@@ -8,6 +8,7 @@ import PlacesToVisit from '../components/PlacesToVisit';
 import Footer from '../components/Footer';
 import { Button } from '@/components/ui/button';
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function Viewtrip() {
     const { tripId } = useParams(); // Get tripId from URL
@@ -28,7 +29,8 @@ function Viewtrip() {
                 // If it's a new trip, it won't have an ID from localStorage yet
                 // The ID will be assigned when saving
             });
-            console.log("Trip data received from location state:", location.state);
+            console.log("Viewtrip - Trip data received from location state:", JSON.stringify(location.state.tripData, null, 2));
+            console.log("Viewtrip - User selection from location state:", JSON.stringify(location.state.userSelection, null, 2));
         } else if (tripId) {
             // This is for loading a saved trip from localStorage using tripId from URL
             console.log(`Attempting to load trip with ID: ${tripId} from localStorage.`);
@@ -71,8 +73,6 @@ function Viewtrip() {
 
         setIsSaving(true);
 
-        
-        
         try {
             const savedTripsRaw = localStorage.getItem('savedTrips');
             let savedTrips = savedTripsRaw ? JSON.parse(savedTripsRaw) : [];
@@ -86,6 +86,8 @@ function Viewtrip() {
                 ...trip,
                 id: trip.id || Date.now().toString(), // Use existing ID or generate new
                 createdAt: new Date().toISOString() 
+                // The summary is already attached to the trip object in TripSummary component
+                // It will be saved as part of the trip
             };
 
             // Avoid duplicates if saving an already saved trip by ID
@@ -129,8 +131,20 @@ function Viewtrip() {
     return (
         <div className='p-10 md:px-20 lg:px-44 xl:px-56'>
             <InfoSection trip={trip} />
-            <Hotels trip={trip} />
-            <PlacesToVisit trip={trip} />
+            
+            <Tabs defaultValue="hotels" className="mt-8">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="hotels">Hotel Options</TabsTrigger>
+                    <TabsTrigger value="places">Places to Visit</TabsTrigger>
+                </TabsList>
+                <TabsContent value="hotels">
+                    <Hotels trip={trip} />
+                </TabsContent>
+                <TabsContent value="places">
+                    <PlacesToVisit trip={trip} />
+                </TabsContent>
+            </Tabs>
+            
             <div className="my-10 flex justify-center">
                 <Button onClick={handleSaveTrip} disabled={isSaving}>
                     {isSaving ? (
