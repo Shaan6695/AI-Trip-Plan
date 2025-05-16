@@ -60,15 +60,65 @@ function CreateTrip() {
 
       if (!tripDataString) {
         toast('Failed to generate trip data from AI. The response was empty.');
+        setLoading(false);
         return;
       }
 
-      const jsonTripData = JSON.parse(tripDataString);
-      console.log("AI Response JSON:", jsonTripData);
+      let jsonTripData;
+      try {
+        jsonTripData = JSON.parse(tripDataString);
+      } catch (parseError) {
+        console.error("Error parsing AI response JSON:", parseError);
+        console.error("AI Response String was:", tripDataString);
+        toast('Error parsing trip data from AI. The format was unexpected.');
+        setLoading(false);
+        return;
+      }
+      
+      console.log("Original AI Response JSON:", jsonTripData);
+
+      const normalizeData = (data) => {
+        const normalized = { ...data };
+
+        if (normalized.hotel_options && Array.isArray(normalized.hotel_options)) {
+          normalized.hotel_options = normalized.hotel_options.map(hotel => ({
+            name: hotel.name || hotel["Hotel Name"],
+            address: hotel.address || hotel["Hotel address"],
+            price: hotel.price_details || hotel.Price || hotel.price,
+            description: hotel.description,
+            rating: hotel.rating,
+            geo_coordinates: hotel.geo_coordinates || hotel["Geo Coordinates"]
+          }));
+        }
+
+        if (normalized.itinerary && normalized.itinerary.daily_plans && Array.isArray(normalized.itinerary.daily_plans)) {
+          normalized.itinerary.daily_plans = normalized.itinerary.daily_plans.map(day => ({
+            ...day,
+            plan: day.plan && Array.isArray(day.plan) ? day.plan.map(p => {
+              const placeNameSource = p.place || p.name || p.title || p.activity; // Try common keys
+              if (!placeNameSource) {
+                console.warn("Place name/title not found in AI response item. Object received from AI:", JSON.stringify(p));
+              }
+              return {
+                name: placeNameSource || "Unnamed Activity", // Fallback name
+                details: p.details || p["Place Details"],
+                time: p.time,
+                ticket_pricing: p.ticket_pricing || p["ticket Pricing"] || p["Ticket Pricing"],
+                rating: p.rating,
+                geo_coordinates: p.geo_coordinates || p["Geo Coordinates"]
+              };
+            }) : []
+          }));
+        }
+        return normalized;
+      };
+
+      const normalizedTripData = normalizeData(jsonTripData);
+      console.log("Normalized AI Response JSON:", normalizedTripData);
 
       navigate('/view-trip', {
         state: {
-          tripData: jsonTripData,
+          tripData: normalizedTripData,
           userSelection: formData
         }
       });

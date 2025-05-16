@@ -3,7 +3,7 @@ import PlaceCardItem from './PlaceCardItem';
 
 function PlacesToVisit({ trip }) {
   const [activeDay, setActiveDay] = useState(0);
-  const days = trip?.tripData?.itinerary || [];
+  const days = trip?.tripData?.itinerary?.daily_plans || [];
   
   return (
     <div>
