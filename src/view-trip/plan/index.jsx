@@ -29,7 +29,8 @@ function Viewtrip() {
                 // If it's a new trip, it won't have an ID from localStorage yet
                 // The ID will be assigned when saving
             });
-            console.log("Trip data received from location state:", location.state);
+            console.log("Viewtrip - Trip data received from location state:", JSON.stringify(location.state.tripData, null, 2));
+            console.log("Viewtrip - User selection from location state:", JSON.stringify(location.state.userSelection, null, 2));
         } else if (tripId) {
             // This is for loading a saved trip from localStorage using tripId from URL
             console.log(`Attempting to load trip with ID: ${tripId} from localStorage.`);

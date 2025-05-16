@@ -3,7 +3,11 @@ import PlaceCardItem from './PlaceCardItem';
 
 function PlacesToVisit({ trip }) {
   const [activeDay, setActiveDay] = useState(0);
+  
+  // Log the incoming trip prop and the derived days variable for debugging
+  console.log("PlacesToVisit - Received trip prop:", JSON.stringify(trip, null, 2));
   const days = trip?.tripData?.itinerary?.daily_plans || [];
+  console.log("PlacesToVisit - Extracted daily_plans (days variable):", JSON.stringify(days, null, 2));
   
   return (
     <div>
