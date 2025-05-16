@@ -1,8 +1,12 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { FaMapMarkerAlt, FaDollarSign, FaStar, FaHotel } from 'react-icons/fa'
+import { FaMapMarkerAlt, FaDollarSign, FaStar, FaHotel, FaCopy, FaCheck } from 'react-icons/fa'
+import { Button } from '../../components/ui/button';
+import { toast } from 'sonner';
 
 function HotelCardItem({ hotel }) {
+    const [copied, setCopied] = useState(false);
+    
     const getBudgetColor = (price) => {
         if (typeof price !== 'string') {
             return 'bg-gray-50 border-gray-200'; // Default color for undefined/invalid price
@@ -25,10 +29,28 @@ function HotelCardItem({ hotel }) {
     const hotelPrice = hotel?.price;
     const hotelRating = hotel?.rating;
     const hotelDescription = hotel?.description;
+    
+    const handleCopy = (e) => {
+        e.preventDefault(); // Prevent the link from opening
+        e.stopPropagation(); // Stop the event from bubbling up
+        
+        if (hotelName) {
+            navigator.clipboard.writeText(hotelName)
+                .then(() => {
+                    setCopied(true);
+                    toast.success("Hotel name copied to clipboard");
+                    setTimeout(() => setCopied(false), 2000);
+                })
+                .catch(err => {
+                    console.error('Failed to copy: ', err);
+                    toast.error("Failed to copy");
+                });
+        }
+    };
 
     return (
-        <Link to={'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(hotelName || '')} target='_blank'>
-            <div className={`hover:scale-105 transition-all cursor-pointer my-4 p-5 rounded-xl border-2 ${getBudgetColor(hotelPrice)}`}>
+        <div className={`relative hover:scale-105 transition-all cursor-pointer my-4 p-5 rounded-xl border-2 ${getBudgetColor(hotelPrice)}`}>
+            <Link to={'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(hotelName || '')} target='_blank' className="block">
                 <div className="flex items-start gap-3">
                     <div className="p-3 bg-white rounded-full shadow-sm">
                         <FaHotel className="text-xl text-blue-600" />
@@ -56,8 +78,19 @@ function HotelCardItem({ hotel }) {
                         )}
                     </div>
                 </div>
-            </div>
-        </Link>
+            </Link>
+            
+            {/* Copy button */}
+            <Button 
+                variant="outline" 
+                size="sm" 
+                className="absolute top-3 right-3 rounded-full w-8 h-8 p-0"
+                onClick={handleCopy}
+                title="Copy hotel name"
+            >
+                {copied ? <FaCheck className="h-3 w-3 text-green-500" /> : <FaCopy className="h-3 w-3" />}
+            </Button>
+        </div>
     )
 }
 

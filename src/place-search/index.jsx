@@ -45,7 +45,7 @@ function PlaceSearch() {
 
     const request = {
       query: searchQuery,
-      fields: ['name', 'geometry', 'formatted_address', 'place_id', 'rating', 'photos']
+      fields: ['name', 'geometry', 'formatted_address', 'place_id', 'rating']
     };
 
     placesService.textSearch(request, (results, status) => {
@@ -68,7 +68,7 @@ function PlaceSearch() {
     placesService.getDetails({
       placeId: placeId,
       fields: [
-        'name', 'rating', 'formatted_address', 'photos', 
+        'name', 'rating', 'formatted_address', 
         'opening_hours', 'reviews', 'price_level', 'website',
         'formatted_phone_number', 'user_ratings_total', 'place_id'
       ]
@@ -107,16 +107,6 @@ function PlaceSearch() {
           <p className="text-gray-600 mb-2">
             <strong>Phone:</strong> {selectedPlace.formatted_phone_number}
           </p>
-        )}
-        
-        {selectedPlace.photos && selectedPlace.photos.length > 0 && (
-          <div className="mt-3">
-            <img 
-              src={selectedPlace.photos[0].getUrl({maxWidth: 600, maxHeight: 400})}
-              alt={selectedPlace.name}
-              className="w-full h-auto rounded-md"
-            />
-          </div>
         )}
         
         {selectedPlace.opening_hours && (
