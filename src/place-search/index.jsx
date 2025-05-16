@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Loader } from '@googlemaps/js-api-loader';
+import { FaChevronDown, FaChevronUp, FaMagic, FaSpinner } from 'react-icons/fa';
+import { summarizeReviews } from '../service/AIModel';
+import { toast } from 'sonner';
 
 function PlaceSearch() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -11,6 +14,10 @@ function PlaceSearch() {
   const [error, setError] = useState('');
   const [mapApi, setMapApi] = useState(null);
   const [placesService, setPlacesService] = useState(null);
+  const [expandedReviews, setExpandedReviews] = useState(false);
+  const [expandedReviewIndex, setExpandedReviewIndex] = useState(null);
+  const [reviewSummary, setReviewSummary] = useState('');
+  const [summaryLoading, setSummaryLoading] = useState(false);
   
   // Load Google Maps API
   useEffect(() => {
@@ -42,6 +49,7 @@ function PlaceSearch() {
     setLoading(true);
     setError('');
     setSelectedPlace(null);
+    setReviewSummary('');
 
     const request = {
       query: searchQuery,
@@ -64,6 +72,9 @@ function PlaceSearch() {
 
     setLoading(true);
     setError('');
+    setExpandedReviews(false);
+    setExpandedReviewIndex(null);
+    setReviewSummary('');
 
     placesService.getDetails({
       placeId: placeId,
@@ -76,10 +87,79 @@ function PlaceSearch() {
       setLoading(false);
       if (status === mapApi.places.PlacesServiceStatus.OK) {
         setSelectedPlace(place);
+        console.log("Place details:", place); // For debugging
       } else {
         setError('Failed to get place details.');
       }
     });
+  };
+
+  // Generate an AI summary of the reviews
+  const handleSummarizeReviews = async () => {
+    if (!selectedPlace || !selectedPlace.reviews || selectedPlace.reviews.length === 0) {
+      toast.error("No reviews available to summarize");
+      return;
+    }
+
+    setSummaryLoading(true);
+    setReviewSummary('');
+
+    try {
+      const summary = await summarizeReviews(
+        selectedPlace.name, 
+        selectedPlace.reviews
+      );
+      setReviewSummary(summary);
+    } catch (error) {
+      console.error("Error summarizing reviews:", error);
+      toast.error("Failed to summarize reviews. Please try again.");
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  // Format the timestamp from Google reviews
+  const formatReviewTime = (timestamp) => {
+    if (!timestamp) return '';
+    
+    const reviewDate = new Date(timestamp.seconds * 1000);
+    const now = new Date();
+    const diffTime = Math.abs(now - reviewDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays <= 1) return 'Today';
+    if (diffDays <= 7) return `${diffDays} days ago`;
+    if (diffDays <= 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    if (diffDays <= 365) return `${Math.floor(diffDays / 30)} months ago`;
+    return `${Math.floor(diffDays / 365)} years ago`;
+  };
+
+  // Render star rating
+  const renderStars = (rating) => {
+    if (!rating) return null;
+    
+    return (
+      <div className="flex">
+        {[...Array(5)].map((_, i) => (
+          <span key={i} className={i < rating ? "text-yellow-400" : "text-gray-300"}>★</span>
+        ))}
+      </div>
+    );
+  };
+
+  // Toggle expanding all reviews
+  const toggleReviews = () => {
+    setExpandedReviews(!expandedReviews);
+    setExpandedReviewIndex(null); // Reset individual expanded reviews
+  };
+
+  // Toggle individual review expansion
+  const toggleReview = (index) => {
+    if (expandedReviewIndex === index) {
+      setExpandedReviewIndex(null);
+    } else {
+      setExpandedReviewIndex(index);
+    }
   };
 
   const renderPlaceDetails = () => {
@@ -132,6 +212,86 @@ function PlaceSearch() {
           <div className="mt-2">
             <h3 className="font-semibold mb-1">Price Level</h3>
             <p>{"$".repeat(selectedPlace.price_level)}</p>
+          </div>
+        )}
+        
+        {/* Reviews Section */}
+        {selectedPlace.reviews && selectedPlace.reviews.length > 0 && (
+          <div className="mt-6 border-t pt-4">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center cursor-pointer" onClick={toggleReviews}>
+                <h3 className="font-semibold text-lg">
+                  Reviews ({selectedPlace.reviews.length})
+                </h3>
+                <Button variant="ghost" size="sm" className="p-1 h-auto">
+                  {expandedReviews ? <FaChevronUp /> : <FaChevronDown />}
+                </Button>
+              </div>
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="text-sm flex items-center gap-1"
+                onClick={handleSummarizeReviews}
+                disabled={summaryLoading || selectedPlace.reviews.length === 0}
+              >
+                {summaryLoading ? <FaSpinner className="animate-spin" /> : <FaMagic />}
+                <span>Summarize</span>
+              </Button>
+            </div>
+            
+            {/* AI Summary */}
+            {reviewSummary && (
+              <div className="mt-3 p-3 bg-blue-50 rounded-md text-sm border border-blue-100">
+                <h4 className="font-semibold text-blue-800 mb-1">AI Summary</h4>
+                <p className="text-gray-700">{reviewSummary}</p>
+              </div>
+            )}
+
+            {expandedReviews && (
+              <div className="space-y-4 mt-3">
+                {selectedPlace.reviews.map((review, index) => (
+                  <div key={index} className="border-b pb-4 last:border-b-0">
+                    <div className="flex flex-col">
+                      <div className="flex justify-between items-center mb-1">
+                        <p className="font-medium">{review.author_name}</p>
+                        <span className="text-xs text-gray-500">
+                          {review.relative_time_description}
+                        </span>
+                      </div>
+                      
+                      <div className="mb-2">
+                        {renderStars(review.rating)}
+                      </div>
+                      
+                      <div>
+                        {review.text && review.text.length > 150 ? (
+                          <>
+                            <p className="text-sm text-gray-700">
+                              {expandedReviewIndex === index 
+                                ? review.text 
+                                : `${review.text.substring(0, 150)}...`}
+                            </p>
+                            <Button 
+                              variant="link" 
+                              className="p-0 h-auto text-sm text-blue-600"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleReview(index);
+                              }}
+                            >
+                              {expandedReviewIndex === index ? 'Show less' : 'Read more'}
+                            </Button>
+                          </>
+                        ) : (
+                          <p className="text-sm text-gray-700">{review.text}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
         
