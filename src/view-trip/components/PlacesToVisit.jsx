@@ -6,7 +6,17 @@ function PlacesToVisit({ trip }) {
   
   // Log the incoming trip prop and the derived days variable for debugging
   console.log("PlacesToVisit - Received trip prop:", JSON.stringify(trip, null, 2));
-  const days = trip?.tripData?.itinerary?.daily_plans || [];
+  // Support both variants: itinerary may be an array directly, or an object with daily_plans
+  const rawItinerary = trip?.tripData?.itinerary;
+  let days = [];
+  if (Array.isArray(rawItinerary)) {
+    days = rawItinerary;
+  } else if (rawItinerary && Array.isArray(rawItinerary.daily_plans)) {
+    days = rawItinerary.daily_plans;
+  } else if (rawItinerary && Array.isArray(rawItinerary.days)) {
+    // Fallback for previous schema variant
+    days = rawItinerary.days;
+  }
   console.log("PlacesToVisit - Extracted daily_plans (days variable):", JSON.stringify(days, null, 2));
   
   return (

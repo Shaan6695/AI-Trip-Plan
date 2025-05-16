@@ -89,26 +89,61 @@ function CreateTrip() {
             rating: hotel.rating,
             geo_coordinates: hotel.geo_coordinates || hotel["Geo Coordinates"]
           }));
+        } else {
+          normalized.hotel_options = [];
         }
 
-        if (normalized.itinerary && normalized.itinerary.daily_plans && Array.isArray(normalized.itinerary.daily_plans)) {
-          normalized.itinerary.daily_plans = normalized.itinerary.daily_plans.map(day => ({
-            ...day,
-            plan: day.plan && Array.isArray(day.plan) ? day.plan.map(p => {
-              const placeNameSource = p.place || p.name || p.title || p.activity; // Try common keys
-              if (!placeNameSource) {
-                console.warn("Place name/title not found in AI response item. Object received from AI:", JSON.stringify(p));
+        if (data.itinerary) {
+          let sourcePlansArray = null;
+
+          if (Array.isArray(data.itinerary)) {
+            sourcePlansArray = data.itinerary;
+            normalized.itinerary = {};
+          } else if (typeof data.itinerary === 'object' && data.itinerary !== null) {
+            const rawDailyPlans = data.itinerary.daily_plans;
+            const rawDaysKeyData = data.itinerary.days;
+
+            if (rawDailyPlans && Array.isArray(rawDailyPlans)) {
+              sourcePlansArray = rawDailyPlans;
+            } else if (rawDaysKeyData && Array.isArray(rawDaysKeyData)) {
+              sourcePlansArray = rawDaysKeyData;
+              if (normalized.itinerary && normalized.itinerary.days) {
+                  delete normalized.itinerary.days; 
               }
-              return {
-                name: placeNameSource || "Unnamed Activity", // Fallback name
-                details: p.details || p["Place Details"],
-                time: p.time,
-                ticket_pricing: p.ticket_pricing || p["ticket Pricing"] || p["Ticket Pricing"],
-                rating: p.rating,
-                geo_coordinates: p.geo_coordinates || p["Geo Coordinates"]
-              };
-            }) : []
-          }));
+            }
+          }
+
+          if (sourcePlansArray && Array.isArray(sourcePlansArray)) {
+            normalized.itinerary.daily_plans = sourcePlansArray.map(day => ({
+              ...day, 
+              plan: (day.plan && Array.isArray(day.plan)) ? day.plan.map(p => {
+                const placeNameSource = p.place || p.name || p.title || p.activity;
+                if (!placeNameSource) {
+                  console.warn("Place name/title not found in AI response item for a plan. Original plan object:", JSON.stringify(p));
+                }
+                return {
+                  name: placeNameSource || "Unnamed Activity",
+                  details: p.details || p["Place Details"],
+                  time: p.time,
+                  ticket_pricing: p.ticket_pricing || p["ticket Pricing"] || p["Ticket Pricing"],
+                  rating: p.rating,
+                  geo_coordinates: p.geo_coordinates || p["Geo Coordinates"]
+                };
+              }) : [] 
+            }));
+          } else {
+            console.warn("No valid array of daily plans found in 'itinerary'. Setting 'daily_plans' to an empty array. Original itinerary data:", JSON.stringify(data.itinerary));
+            if (typeof normalized.itinerary !== 'object' || normalized.itinerary === null) {
+                normalized.itinerary = {};
+            }
+            normalized.itinerary.daily_plans = [];
+            if (normalized.itinerary.hasOwnProperty('days')) {
+                 delete normalized.itinerary.days;
+            }
+          }
+        } else {
+          console.warn("AI Response JSON does not contain an 'itinerary' key or it is null. Initializing with empty daily_plans.");
+          normalized.itinerary = { daily_plans: [] };
         }
         return normalized;
       };
